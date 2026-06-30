@@ -120,7 +120,8 @@ async function main() {
     // }, INTERVAL_MS);
 }
 
-main().catch(console.error);
+main();
+// main().catch(console.error);
 
 export type QueryParams = {
     /** Search query string; syntax, phrase, boolean, and faceting is unspecified, but Lucene query syntax is recommended. */

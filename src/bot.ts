@@ -43,11 +43,11 @@ const agent = new AtpAgent({ service: 'https://bsky.social' });
  * Login to Bluesky
  */
 async function login(): Promise<void> {
-    const username = process.env.BSKY_USERNAME;
+    const username = process.env.BSKY_HANDLE;
     const password = process.env.BSKY_PASSWORD;
 
     if (!username || !password) {
-        throw new Error('Missing BSKY_USERNAME or BSKY_PASSWORD');
+        throw new Error('Missing BSKY_HANDLE or BSKY_PASSWORD');
     }
 
     await agent.login({

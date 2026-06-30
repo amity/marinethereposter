@@ -6,7 +6,7 @@ import { randomInt } from 'node:crypto';
 
 import lines from './lines.js';
 
-const INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
+const INTERVAL_MS = 6 * 60 * 60 * 1000; // 4 hours
 // let interval: NodeJS.Timeout | null = null;
 
 dotenv.config();
@@ -91,7 +91,10 @@ async function searchAndRepostContent () {
 
     const resultsTerm = await agent.app.bsky.feed.searchPosts(searchParams);
     const resultsHashtag = await agent.app.bsky.feed.searchPosts(searchParamsHashtag);
-    // console.log("XXXXXXXXXX");
+    console.log("XXXXXXXXXX results");
+    console.log(JSON.stringify(resultsTerm));
+    console.log("YYYYYYYYYY hashtag");
+    console.log(JSON.stringify(resultsHashtag));
 
     for(const postList of [resultsTerm?.data?.posts, resultsHashtag?.data?.posts]){
         for(const post of postList){
@@ -104,9 +107,8 @@ async function searchAndRepostContent () {
         }
     }
     console.log(`Reposted ${processedCids.length} posts!`);
-
     // If no posts, post a random Marine line from SR:A.
-    if(processedCids.length = 0){
+    if(processedCids.length == 0){
         postMessage();
     }
 }

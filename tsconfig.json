@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+      "target": "ES2022",
+      "module": "preserve",
+      "moduleResolution": "bundler",
+      "esModuleInterop": true,
+      "strict": true,
+      "rootDir": "./src",
+      "outDir": "./dist"
+    }
+}

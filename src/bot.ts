@@ -4,6 +4,8 @@ import { randomInt } from 'node:crypto';
 
 import lines from './lines.js';
 
+const DEBUG_MODE = false;
+
 const INTERVAL_MS = 6 * 60 * 60 * 1000; // 4 hours
 // let interval: NodeJS.Timeout | null = null;
 
@@ -37,9 +39,9 @@ async function postMessage(): Promise<void> {
     const text = lines[randomInt(lines.length)];
     console.log('No posts detected. Sending text:');
     console.log(text);
-    await agent.post({
-        text
-    });
+    if(!DEBUG_MODE){
+        await agent.post({text});
+    }
 }
 
 async function searchAndRepostContent () {
@@ -63,17 +65,25 @@ async function searchAndRepostContent () {
         limit: 10,
         since: last_trawl_ms.toISOString(),  // "2026-06-30T00:55:08.099Z" 
     }
+    const searchParamsMention: QueryParams = {
+        q: '@marinetheraccoon.amity.city',
+        limit: 10,
+        since: last_trawl_ms.toISOString(),  // "2026-06-30T00:55:08.099Z" 
+    }
 
     const resultsFull = await agent.app.bsky.feed.searchPosts(searchParamsFull);
     const resultsTrunc = await agent.app.bsky.feed.searchPosts(searchParamsTrunc);
     const resultsHashtag = await agent.app.bsky.feed.searchPosts(searchParamsHashtag);
+    const resultsMention = await agent.app.bsky.feed.searchPosts(searchParamsMention);
 
-    for(const postList of [resultsFull?.data?.posts, resultsTrunc?.data?.posts,resultsHashtag?.data?.posts]){
-        for(const post of postList){
+    for(const postList of [resultsFull, resultsTrunc,resultsHashtag, resultsMention]){
+        for(const post of postList?.data?.posts){
             if(!processedCids.includes(post.cid)){
-                await agent.repost(post.uri, post.cid);
-                // console.log('NEW POST:');
-                // console.log(post?.record?.text);
+                if(!DEBUG_MODE){
+                    await agent.repost(post.uri, post.cid);
+                }
+                console.log('NEW POST:');
+                console.log(post?.record?.text);
                 processedCids.push(post.cid);
             }
         }

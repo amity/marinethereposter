@@ -67,7 +67,8 @@ async function postMessage(): Promise<void> {
     // - #hashtags (searchable tags)
     // - URLs (clickable links)
     const text = lines[randomInt(lines.length)];
-
+    console.log('No posts detected. Sending text:');
+    console.log(text);
     await agent.post({
         text
     });
@@ -87,15 +88,17 @@ async function searchAndRepostContent () {
         limit: 10,
         since: last_trawl_ms.toISOString(),  // "2026-06-30T00:55:08.099Z" 
     }
-    const resultsTerm = (await agent.app.bsky.feed.searchPosts(searchParams))?.data?.posts;
-    const resultsHashtag = (await agent.app.bsky.feed.searchPosts(searchParamsHashtag))?.data?.posts;
 
-    for(const postList of [resultsTerm, resultsHashtag]){
+    const resultsTerm = await agent.app.bsky.feed.searchPosts(searchParams);
+    const resultsHashtag = await agent.app.bsky.feed.searchPosts(searchParamsHashtag);
+    // console.log("XXXXXXXXXX");
+
+    for(const postList of [resultsTerm?.data?.posts, resultsHashtag?.data?.posts]){
         for(const post of postList){
             if(!processedCids.includes(post.cid)){
-                // await agent.repost(post.uri, post.cid);
-                console.log('NEW POST:');
-                console.log(post?.record?.text);
+                await agent.repost(post.uri, post.cid);
+                // console.log('NEW POST:');
+                // console.log(post?.record?.text);
                 processedCids.push(post.cid);
             }
         }

@@ -1,43 +1,15 @@
 import { AtpAgent } from '@atproto/api';
 import dotenv from 'dotenv';
 import { randomInt } from 'node:crypto';
-// import { serve } from '@hono/node-server'
-// import { Hono } from 'hono'
 
 import lines from './lines.js';
 
-const INTERVAL_MS = 6 * 60 * 60 * 1000; // 4 hours
+const INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
 // let interval: NodeJS.Timeout | null = null;
 
 dotenv.config();
 // Initialize the agent
 const agent = new AtpAgent({ service: 'https://bsky.social' });
-
-// // Health endpoint stuff
-// const app = new Hono()
-// const PORT = Number(process.env.PORT) || 3000
-
-// app.get('/health', (c) => {
-//   return c.json({ status: 'ok', timestamp: new Date().toISOString() })
-// })
-
-// serve({
-//   fetch: app.fetch,
-//   port: PORT,
-// }, (info) => {
-//   console.warn(`Server running on port ${info.port}`)
-//   console.warn(`Health check available at http://localhost:${info.port}/health`)
-// })
-
-// process.on('SIGTERM', () => {
-//   console.warn('SIGTERM received, shutting down gracefully...')
-//   process.exit(0)
-// })
-
-// process.on('SIGINT', () => {
-//   console.warn('SIGINT received, shutting down gracefully...')
-//   process.exit(0)
-// })
 
 /**
  * Login to Bluesky
@@ -62,10 +34,6 @@ async function login(): Promise<void> {
  * Post a message with RichText (handles @mentions, #hashtags, and links)
  */
 async function postMessage(): Promise<void> {
-    // RichText automatically detects and creates facets for:
-    // - @mentions (links to user profiles)
-    // - #hashtags (searchable tags)
-    // - URLs (clickable links)
     const text = lines[randomInt(lines.length)];
     console.log('No posts detected. Sending text:');
     console.log(text);
@@ -76,27 +44,31 @@ async function postMessage(): Promise<void> {
 
 async function searchAndRepostContent () {
     const last_trawl_ms = new Date(new Date().valueOf() - INTERVAL_MS);
-    //  Have to query separately, as for some reason hashtag makes it exclusive or something
+    //  Have to query separately, as Bsky API currently doesn't support OR in search queries. 
+    // https://github.com/bluesky-social/atproto/discussions/3502#discussioncomment-12257148
+    
     const processedCids: string[] = [];
     const searchParamsHashtag: QueryParams = {
-        q: '#MarineTheRaccoon', // gives quite a few posts
+        q: '#MarineTheRaccoon',
         limit: 10,
         since: last_trawl_ms.toISOString(),  // "2026-06-30T00:55:08.099Z" 
     }
-    const searchParams: QueryParams = {
-        q: '"Marine the Raccoon"', //  gives 8 posts
+    const searchParamsFull: QueryParams = {
+        q: '"Marine the Raccoon"',
+        limit: 10,
+        since: last_trawl_ms.toISOString(),  // "2026-06-30T00:55:08.099Z" 
+    }
+    const searchParamsTrunc: QueryParams = {
+        q: '"Marine Raccoon"',
         limit: 10,
         since: last_trawl_ms.toISOString(),  // "2026-06-30T00:55:08.099Z" 
     }
 
-    const resultsTerm = await agent.app.bsky.feed.searchPosts(searchParams);
+    const resultsFull = await agent.app.bsky.feed.searchPosts(searchParamsFull);
+    const resultsTrunc = await agent.app.bsky.feed.searchPosts(searchParamsTrunc);
     const resultsHashtag = await agent.app.bsky.feed.searchPosts(searchParamsHashtag);
-    console.log("XXXXXXXXXX results");
-    console.log(JSON.stringify(resultsTerm));
-    console.log("YYYYYYYYYY hashtag");
-    console.log(JSON.stringify(resultsHashtag));
 
-    for(const postList of [resultsTerm?.data?.posts, resultsHashtag?.data?.posts]){
+    for(const postList of [resultsFull?.data?.posts, resultsTrunc?.data?.posts,resultsHashtag?.data?.posts]){
         for(const post of postList){
             if(!processedCids.includes(post.cid)){
                 await agent.repost(post.uri, post.cid);

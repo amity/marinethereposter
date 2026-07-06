@@ -6,7 +6,7 @@ import { randomInt } from 'node:crypto';
 
 import lines from './lines.js';
 
-const INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
+const INTERVAL_MS = 12 * 60 * 60 * 1000; // 4 hours
 // let interval: NodeJS.Timeout | null = null;
 
 dotenv.config();

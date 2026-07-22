@@ -1,4 +1,4 @@
-import { AtpAgent } from '@atproto/api';
+import { AtpAgent, AppBskyFeedDefs } from '@atproto/api';
 import dotenv from 'dotenv';
 import { randomInt } from 'node:crypto';
 
@@ -44,6 +44,12 @@ async function postMessage(): Promise<void> {
     }
 }
 
+function postIsNSFW(post: AppBskyFeedDefs.PostView): boolean {
+    return post?.labels?.find((label => label.val == "porn")) ||
+    ((<any>post?.record?.labels)?.values.find((values: { val: string; }) => values?.val == 'porn'))
+}
+
+
 async function searchAndRepostContent () {
     const last_trawl_ms = new Date(new Date().valueOf() - INTERVAL_MS);
     //  Have to query separately, as Bsky API currently doesn't support OR in search queries. 
@@ -79,12 +85,17 @@ async function searchAndRepostContent () {
     for(const postList of [resultsFull, resultsTrunc,resultsHashtag, resultsMention]){
         for(const post of postList?.data?.posts){
             if(!processedCids.includes(post.cid)){
-                if(!DEBUG_MODE){
-                    await agent.repost(post.uri, post.cid);
+                if(!postIsNSFW(post)){
+                    if(!DEBUG_MODE){
+                        await agent.repost(post.uri, post.cid);
+                    }
+                    console.log('NEW POST:');
+                    console.log(JSON.stringify(post));
+                    processedCids.push(post.cid);
                 }
-                console.log('NEW POST:');
-                console.log(post?.record?.text);
-                processedCids.push(post.cid);
+                else {
+                    console.log(`Not reblogging porn: ${post?.record?.text}`)
+                }
             }
         }
     }
